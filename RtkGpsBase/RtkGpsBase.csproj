@@ -96,6 +96,11 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enums\HttpParserState.cs" />
+    <Compile Include="Enums\HttpResponseState.cs" />
+    <Compile Include="HttpRequest.cs" />
+    <Compile Include="HttpRequestParser.cs" />
+    <Compile Include="HttpServer.cs" />
     <Compile Include="SerialPort.cs" />
     <Compile Include="StartupTask.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
