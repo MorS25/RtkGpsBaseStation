@@ -1,30 +1,32 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using Windows.Networking.Sockets;
-using Windows.Storage.Streams;
 
 namespace RtkGpsBase{
     internal sealed class HttpServer : IDisposable
     {
         public delegate void HttpRequestReceivedEvent(HttpRequest request);
+        public event HttpRequestReceivedEvent OnRequestReceived;
 
-        private readonly StreamSocketListener _listener;
+        private static StreamSocketListener _listener;
         private readonly int _port;
 
-        private readonly SerialPort _serialPort;
+        private readonly RtkGps _rtkGpsData;
 
         public HttpServer(int serverPort)
         {
-            _serialPort = new SerialPort("AI041RYG", 57600, 5000, 5000);
+            if (_listener != null)
+                return;
 
-            if (_listener == null)
-            {
-                _listener = new StreamSocketListener();
-            }
+            _listener = new StreamSocketListener();
+
+            _rtkGpsData = new RtkGps("AI041RYG", 57600, 5000, 5000);
+
             _port = serverPort;
 
-            _listener.ConnectionReceived += (s, e) => ProcessRequestAsync(e.Socket);
+            _rtkGpsData.Start();
         }
 
         public void Dispose()
@@ -32,12 +34,12 @@ namespace RtkGpsBase{
             _listener?.Dispose();
         }
 
-        public event HttpRequestReceivedEvent OnRequestReceived;
-
-        internal async void StartServer()
+        internal async Task Start()
         {
             try
             {
+                _listener.ConnectionReceived += (s, e) => { Task.Factory.StartNew(async () => await ProcessRequestAsync(e.Socket)); };
+
                 await _listener.BindServiceNameAsync(_port.ToString());
             }
             catch (Exception ex)
@@ -46,8 +48,10 @@ namespace RtkGpsBase{
             }
         }
 
-        private async void ProcessRequestAsync(StreamSocket socket)
+        private async Task ProcessRequestAsync(StreamSocket socket)
         {
+            Debug.WriteLine($"Connection from {socket.Information.RemoteAddress}, {socket.Information.RemoteHostName}");
+
             HttpRequest request;
             using (var stream = socket.InputStream)
             {
@@ -56,42 +60,31 @@ namespace RtkGpsBase{
                 OnRequestReceived?.Invoke(request);
             }
 
-            using (var output = socket.OutputStream)
+            try
             {
-                try
+                using (var output = socket.OutputStream)
                 {
-                    if (request.Method == "GET")
+                    if (request.Method != "GET") return;
+
+                    using (var resp = output.AsStreamForWrite())
                     {
-                        WriteResponse(output);
+                        while (true) //Stream whatever we get from the base station GPS to the client
+                        {
+                            if (_rtkGpsData.IncomingNtripData.Count < 1)
+                                return;
+
+                            var data = _rtkGpsData.IncomingNtripData[0];
+                            var stream = new MemoryStream(data);
+                            await resp.WriteAsync(data, 0, data.Length);
+                            await stream.CopyToAsync(resp);
+                            await resp.FlushAsync();
+                        }
                     }
                 }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e);
-                }
             }
-        }
-
-        private void WriteResponse(IOutputStream output)
-        {
-            var resp = output.AsStreamForWrite();
-
-            while (true) //Stream whatever we get from the base station GPS to the client
+            catch (Exception e)
             {
-                try
-                {
-                    var bodyArray = _serialPort.Read();
-
-                    var stream = new MemoryStream(bodyArray);
-                    resp.WriteAsync(bodyArray, 0, bodyArray.Length);
-                    stream.CopyToAsync(resp);
-                    resp.FlushAsync();
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e.ToString());
-                    break;
-                }
+                Debug.WriteLine(e);
             }
         }
     }
