@@ -79,7 +79,7 @@ namespace RtkGpsBase{
                         continue;
                     }
 
-                    if (IncomingNtripData.Count > 8)
+                    if (IncomingNtripData.Count > 2)
                         IncomingNtripData.RemoveAt(0);
 
                     var r = await Read();
