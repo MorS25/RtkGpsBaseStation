@@ -8,15 +8,17 @@ namespace RtkGpsBase
     {
         private static BackgroundTaskDeferral _deferral;
 
-        public void Run(IBackgroundTaskInstance taskInstance)
+        public async void Run(IBackgroundTaskInstance taskInstance)
         {
             _deferral = taskInstance.GetDeferral();
 
-            Task.Factory.StartNew(async () =>
-            {
-                var httpServer = new HttpServer(8000);
-                await httpServer.Start();
-            }, TaskCreationOptions.LongRunning);
+            var lcd = new SfSerial16X2Lcd();
+            await lcd.Start();
+
+            await lcd.Write("Starting HTTP");
+
+            var httpServer = new HttpServer(8000, lcd);
+            await httpServer.Start();
         }
     }
 }
