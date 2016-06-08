@@ -16,7 +16,7 @@ namespace RtkGpsBase
 
         internal async Task Start()
         {
-            await _serialPort.Open("BCM2836", 9600, 1000, 1000);
+            await _serialPort.Open("BCM2837", 9600, 1000, 1000); //BCM2837 for the PI 2, BCM2836 for the PI 3
         }
 
         internal async Task WriteToFirstLine(string text)

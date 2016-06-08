@@ -65,7 +65,7 @@ namespace RtkGpsBase
                 if (_lcd != null)
                     await _lcd.Write($"Found - {identifier}");
 
-                _serialPort.ReadTimeout = TimeSpan.MaxValue;
+                _serialPort.ReadTimeout = TimeSpan.FromMilliseconds(readTimeoutMs);
                 _serialPort.WriteTimeout = TimeSpan.FromMilliseconds(writeTimeoutMs);
                 _serialPort.BaudRate = (uint)baudRate;
                 _serialPort.Parity = SerialParity.None;
