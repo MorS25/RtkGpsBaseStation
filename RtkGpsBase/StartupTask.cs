@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
 
+#pragma warning disable 4014
 namespace RtkGpsBase
 {
     //The http server code was taken from a windows 10 IoT Core example
@@ -8,17 +9,16 @@ namespace RtkGpsBase
     {
         private static BackgroundTaskDeferral _deferral;
 
-        public async void Run(IBackgroundTaskInstance taskInstance)
+        private Display _display = new Display();
+
+        public void Run(IBackgroundTaskInstance taskInstance)
         {
             _deferral = taskInstance.GetDeferral();
 
-            var lcd = new SfSerial16X2Lcd();
-            await lcd.Start();
+            _display.Start();
 
-            await lcd.Write("Starting HTTP");
-
-            var httpServer = new HttpServer(8000, lcd);
-            await httpServer.Start();
+            var httpServer = new HttpServer(8000);
+            httpServer.Start();
         }
     }
 }

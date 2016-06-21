@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Windows.Devices.SerialCommunication;
 using Windows.Networking.Sockets;
+using Windows.Storage.Streams;
 
 namespace RtkGpsBase{
     internal sealed class HttpServer : IDisposable
@@ -14,19 +14,15 @@ namespace RtkGpsBase{
 
         private static StreamSocketListener _listener;
         private readonly int _port;
-        private readonly SerialPort _rtkGps;
-        private readonly SfSerial16X2Lcd _lcd;
+        private SerialDevice _rtkGps;
+        private DataReader _dataReader;
 
-        public HttpServer(int serverPort, SfSerial16X2Lcd lcd)
+        public HttpServer(int serverPort)
         {
             if (_listener != null)
                 return;
 
-            _lcd = lcd;
-
             _listener = new StreamSocketListener();
-
-            _rtkGps = new SerialPort(lcd);
 
             _port = serverPort;
         }
@@ -38,7 +34,12 @@ namespace RtkGpsBase{
 
         internal async Task Start()
         {
-            await _rtkGps.Open("AI041RYG", 57600, 5000, 5000);
+            _rtkGps = await SerialDeviceHelper.GetSerialDevice("AI041RYG", 57600);
+            await Task.Delay(500);
+            if (_rtkGps == null)
+                return;
+
+            _dataReader = new DataReader(_rtkGps.InputStream) {InputStreamOptions =  InputStreamOptions.Partial};
 
             try
             {
@@ -46,20 +47,15 @@ namespace RtkGpsBase{
 
                 await _listener.BindServiceNameAsync(_port.ToString());
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                await _lcd.WriteToFirstLine("Could not bind");
-                await _lcd.WriteToSecondLine($"to {_port}");
-                Debug.WriteLine("Http Server could not bind to service {0}. Error {1}", _port, ex.Message);
+                await Display.Write($"failed {_port}");
             }
         }
 
         private async Task ProcessRequestAsync(StreamSocket socket)
         {
-            await _lcd.WriteToFirstLine($"Connection from {socket.Information.RemoteAddress}");
-            await _lcd.WriteToSecondLine($"{socket.Information.RemoteAddress}");
-
-            Debug.WriteLine($"Connection from {socket.Information.RemoteAddress}, {socket.Information.RemoteHostName}");
+            await Display.Write($"{socket.Information.RemoteAddress}");
 
             HttpRequest request;
             using (var stream = socket.InputStream)
@@ -79,9 +75,15 @@ namespace RtkGpsBase{
                     {
                         while (true) //Stream whatever we get from the base station GPS to the client
                         {
-                            var data = await _rtkGps.ReadBytes(400);
+                            var bytesIn = await _dataReader.LoadAsync(512);
 
-                            await resp.WriteAsync(data, 0, data.Length);
+                            if (bytesIn == 0)
+                                continue;
+
+                            var buffer = new byte[bytesIn];
+                            _dataReader.ReadBytes(buffer);
+
+                            await resp.WriteAsync(buffer, 0, buffer.Length);
                             await resp.FlushAsync();
                         }
                     }
@@ -89,9 +91,6 @@ namespace RtkGpsBase{
             }
             catch (Exception e)
             {
-                await _lcd.WriteToFirstLine("Disconnected");
-                await _lcd.WriteToSecondLine($"{socket.Information.RemoteAddress}");
-
                 Debug.WriteLine(e);
             }
         }
