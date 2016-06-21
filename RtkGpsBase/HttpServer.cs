@@ -57,20 +57,18 @@ namespace RtkGpsBase{
         {
             await Display.Write($"{socket.Information.RemoteAddress}");
 
-            HttpRequest request;
             using (var stream = socket.InputStream)
             {
                 var parser = new HttpRequestParser();
-                request = await parser.GetHttpRequestForStream(stream);
-                OnRequestReceived?.Invoke(request);
+                var request = await parser.GetHttpRequestForStream(stream);
+                if (request.Method != "GET")
+                    return;
             }
 
             try
             {
                 using (var output = socket.OutputStream)
                 {
-                    if (request.Method != "GET") return;
-
                     using (var resp = output.AsStreamForWrite())
                     {
                         while (true) //Stream whatever we get from the base station GPS to the client
