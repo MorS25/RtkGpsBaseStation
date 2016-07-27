@@ -26,20 +26,12 @@ namespace RtkGpsBase
             var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains(identifier) || d.Name.Equals(identifier));
 
             if (selectedPort == null)
-            {
-                await Display.Write($"not found {identifier}");
                 return null;
-            }
 
             var serialDevice = await SerialDevice.FromIdAsync(selectedPort.Id);
 
             if (serialDevice == null)
-            {
-                await Display.Write($"not opened {identifier}");
                 return null;
-            }
-
-            await Display.Write($"Found - {identifier}");
 
             serialDevice.ReadTimeout = readTimeout;
             serialDevice.WriteTimeout = writeTimeout;

@@ -96,7 +96,6 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Display.cs" />
     <Compile Include="Enums\HttpParserState.cs" />
     <Compile Include="Enums\HttpResponseState.cs" />
     <Compile Include="HttpRequest.cs" />

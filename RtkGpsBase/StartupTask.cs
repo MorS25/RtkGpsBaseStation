@@ -9,16 +9,17 @@ namespace RtkGpsBase
     {
         private static BackgroundTaskDeferral _deferral;
 
-        private Display _display = new Display();
+        private readonly HttpServer _httpServer = new HttpServer();
+        private readonly SparkFunSerial16X2Lcd _display = new SparkFunSerial16X2Lcd();
 
-        public void Run(IBackgroundTaskInstance taskInstance)
+        public async void Run(IBackgroundTaskInstance taskInstance)
         {
             _deferral = taskInstance.GetDeferral();
 
-            _display.Start();
-
-            var httpServer = new HttpServer(8000);
-            httpServer.Start();
+            await _display.InitializeAsync();
+            
+            var httpServer = new HttpServer();
+            await httpServer.Start(_display);
         }
     }
 }
