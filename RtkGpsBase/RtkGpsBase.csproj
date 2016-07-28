@@ -96,11 +96,7 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Enums\HttpParserState.cs" />
-    <Compile Include="Enums\HttpResponseState.cs" />
-    <Compile Include="HttpRequest.cs" />
-    <Compile Include="HttpRequestParser.cs" />
-    <Compile Include="HttpServer.cs" />
+    <Compile Include="NtripServer.cs" />
     <Compile Include="SerialDeviceHelper.cs" />
     <Compile Include="SfSerial16x2Lcd.cs" />
     <Compile Include="StartupTask.cs" />

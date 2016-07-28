@@ -119,6 +119,5 @@ namespace RtkGpsBase
             if (line == 2)
                 await WriteToSecondLineAsync(text);
         }
-
     }
 }
