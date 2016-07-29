@@ -13,13 +13,9 @@ namespace RtkGpsBase{
         private readonly int _port = 8000;
         private SerialDevice _rtkGps;
         private DataReader _dataReader;
-
         private readonly SparkFunSerial16X2Lcd _display;
-
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
-
         private byte[] _buffer;
-
         internal ManualResetEventSlim ManualResetEventSlim = new ManualResetEventSlim(false);
 
         public NtripServer(SparkFunSerial16X2Lcd display)
@@ -30,10 +26,10 @@ namespace RtkGpsBase{
 
         internal async Task InitializeAsync()
         {
-            _rtkGps = await SerialDeviceHelper.GetSerialDevice("AI041RYG", 57600, new TimeSpan(0, 0, 0, 0, 5), new TimeSpan(0, 0, 0, 0, 5));
+            _rtkGps = await SerialDeviceHelper.GetSerialDevice("AI041RYG", 57600, new TimeSpan(0, 0, 0, 0, 12), new TimeSpan(0, 0, 0, 0, 12)); //5hz rate is 12ms
 
             if (_rtkGps != null)
-                _dataReader = new DataReader(_rtkGps.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
+                _dataReader = new DataReader(_rtkGps.InputStream) {InputStreamOptions = InputStreamOptions.Partial}; //send whatever we 
             else
             {
                 await _display.WriteAsync("GPS not found");
@@ -79,7 +75,7 @@ namespace RtkGpsBase{
                     //    
                 }
 
-                ManualResetEventSlim.Set();
+                ManualResetEventSlim.Set();//Send data to clients
                 ManualResetEventSlim.Reset();
             }
         }
