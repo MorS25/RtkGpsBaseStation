@@ -96,6 +96,7 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IotClient.cs" />
     <Compile Include="NtripServer.cs" />
     <Compile Include="SerialDeviceHelper.cs" />
     <Compile Include="SfSerial16x2Lcd.cs" />

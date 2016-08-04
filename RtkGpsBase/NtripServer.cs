@@ -14,14 +14,25 @@ namespace RtkGpsBase{
         private SerialDevice _rtkGps;
         private DataReader _dataReader;
         private readonly SparkFunSerial16X2Lcd _display;
+        private static IoTClient _ioTClient;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
-        private byte[] _buffer;
+        private static byte[] _buffer;
+        private Timer _timer = new Timer(TimerCallback, null, 0, 250);
         internal ManualResetEventSlim ManualResetEventSlim = new ManualResetEventSlim(false);
-
-        public NtripServer(SparkFunSerial16X2Lcd display)
+        
+        public NtripServer(SparkFunSerial16X2Lcd display, IoTClient ioTClient)
         {
             _display = display;
+            _ioTClient = ioTClient;
             _listener = new StreamSocketListener();
+        }
+
+        private static async void TimerCallback(object state)
+        {
+            if (_buffer == null || _ioTClient == null)
+                return;
+
+            await _ioTClient.SendEventAsync(_buffer);
         }
 
         internal async Task InitializeAsync()
